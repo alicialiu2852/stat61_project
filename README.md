@@ -8,5 +8,6 @@ This is an interactive lab that explores creating confidence intervals for QQ pl
 3. data_generation.r : File used to generate data in distTest.csv and mystery_data.csv
 4. distTest.csv : Data file
 5. heights.csv : Data file
-6. mystery_data.csv : Data file
-7. sampled_CPS.csv : Data file
+6. KS_Example.png : Picture showing KS test
+7. mystery_data.csv : Data file
+8. sampled_CPS.csv : Data file
