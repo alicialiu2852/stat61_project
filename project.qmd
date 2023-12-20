@@ -1,0 +1,208 @@
+---
+title: "Final_Project"
+format: html
+editor: AJ
+---
+```{r}
+library(tidyverse)
+library(patchwork)
+library(ggplot2)
+library(qqplotr)
+library(dplyr)
+```
+
+
+## QQplot vs. Histogram
+One visual tool that provides statisticians insights into the underlying pattern or shape of the data distribution is the histogram, a graph that displays the frequencies across different values. 
+
+First look at the histogram generated below, do you think it follows normal distribution?
+
+```{r}
+# Set seed for reproducibility
+set.seed(123)
+
+# Generate data 
+data <- rgamma(35, shape = 2)
+
+# Create a data frame
+df <- data.frame(values = data)
+
+# Plot histogram using ggplot2
+histogram <- ggplot(df, aes(x = values)) +
+  geom_histogram(aes(y = after_stat(density))) +
+  stat_function(
+    fun = dnorm,
+    args = list(mean = 0, sd = 1),
+    col="red"
+  )+
+  theme_minimal()+
+  labs(title = "Exmaple 1: Histogram", x = "x", y = "Density")
+
+histogram
+```
+
+It exhibits a right-skewed distribution. However, if you check its QQ plot:
+
+```{r}
+mean < mean(df$values)
+sd <- sd(df$values)
+
+# Plot QQ plot
+qqplot <- ggplot(df, aes(sample = values)) +
+  geom_qq() +
+  geom_qq_line(col = "red")+
+  theme_minimal()+
+  labs(title = "Example 1: QQ Plot",  x = "Normal quantiles", y = "Sample quantiles")
+
+
+qqplot
+```
+It shows normality in the QQ plot but with heavier tails at two ends.
+
+Now we look at another example. See the histogram below, can you tell if it's normal?
+```{r}
+# read in example 2 data
+example_data <- read_csv("data_examples.csv",show_col_types = FALSE)
+
+# plot histogram
+histogram2 <- ggplot(example_data, aes(x = C4)) +
+  geom_histogram(aes(y = after_stat(density)))+
+  stat_function(
+    fun = dnorm,
+    args = list(mean = 0, sd = 1),
+    col="red"
+  )+
+  theme_minimal()
+  labs(title = "Exmaple 2: Histogram", x = "x", y = "Frequency")
+
+histogram2
+
+```
+It's hard to tell if it's a normal distribution, right? But if we look at the QQ plot, the answer is clear.
+```{r}
+# Plot QQ plot
+qqplot2 <- ggplot(example_data, aes(sample = C4)) +
+  geom_qq() +
+  geom_qq_line( color = "red")+
+  theme_minimal()
+  labs(title = "Example 2: QQ Plot",  x = "Normal quantiles", y = "Sample quantiles")
+
+qqplot2
+```
+It follows a normal distribution!
+
+
+Now we've shown that 1) data that does not look normal in the histogram may follow QQ plot and shows normality 2) data that it's hard to determine whether follows a normal distribution in the histogram shows clear normality in QQ plot.
+
+Why QQ plot can better tell if data follows normal distribution? 
+
+QQ plot compares sample quantiles and theoretical quantiles directly and thus provides effective identification in deviations of the distribution and skewness. These deviations are noticeable as departures from a straight line in the QQ plot. However, as the histogram shows the shape of a distribution, it's challenging to tell the skewness and tail performances. 
+
+For these reasons, QQ plot is advantageous in showing whether a distribution is normal, and provides more information about skewness and tail performances than histogram.
+
+## REAL data: non-normal
+In the second example, we will use the 2020 US wage and salary income data from 65535 people. We randomly sampled 80 observations from the original dataset. This data was collected by US Bureau of Labor Statistics. 
+
+What distribution do you think the US individual income in 2020 would follow? Normal, log-normal, or uniform?
+
+Let's start with the histogram of the orginal income data.
+```{r}
+CPSworkers <- read_csv("sampled_CPS.csv", show_col_types =  FALSE)
+
+inc_hist <- ggplot(CPSworkers,aes(x=incwage))+
+  geom_histogram(aes(y=after_stat(density)),bins = 30, col = "white") + theme_minimal() + ylab("Density") + xlab("Income")+ ggtitle("Histogram of US Individual Income in 2020")
+
+inc_hist
+
+```
+It is extremely right-skewed. However, we need to look at QQ plots of the data to further explore what distribution it follows.
+
+
+The code below creates the QQ plots of the income data with confidence intervals assuming normal distribution and log-normal distribution. 
+
+```{r}
+mean2 <- mean(CPSworkers$incwage)
+sd2 <- sd(CPSworkers$incwage)
+
+# Normal QQ plot
+qqn2 <- ggplot(CPSworkers, aes(sample=incwage)) + 
+  geom_qq(distribution = qnorm, dparams = list(mean = mean2, sd = sd2)) +
+  geom_qq_line(dparams = list(mean = mean2, sd = sd2), col = "red") + geom_qq_band(distribution = "norm", dparams = list(mean = mean2, sd = sd2))+ theme_minimal() +ggtitle("QQ Plot assuming Normal Data w/95% Confidence Band")
+
+qqn2
+
+```
+```{r}
+# Log-adjust the income variable
+lnwage <- log(CPSworkers$incwage)
+mean3 <- mean(lnwage)
+sd3 <- sd(lnwage)
+
+# Log-normal QQ plot (mean and sd same as normal distr.)
+qqln <- ggplot(CPSworkers, aes(sample=incwage)) + 
+  geom_qq(distribution = qlnorm, dparams = list(meanlog = mean3, sdlog = sd3)) + # Add qq points, specifying from a Log Normal
+  geom_qq_line(distribution = qlnorm, dparams = list(meanlog = mean3, sdlog = sd3), col = "red") + # Add qq line, specifying from a Log Normal
+  stat_qq_band(distribution = "lnorm", dparams = list(meanlog = mean3, sdlog = sd3)) +
+  theme_minimal() + ggtitle("QQ Plot assuming Lognormal Data w/95% Confidence Bands")
+qqln
+                
+```
+
+```{r}
+# Uniform QQ plot
+qqun2 <- ggplot(CPSworkers, aes(sample=incwage)) + 
+  geom_qq(distribution = qunif)+
+  geom_qq_line(distribution = qunif, col ="red")+  geom_qq_band(distribution = "unif") + theme_minimal() + ggtitle("QQ Plot assuming Uniform Data w/95% Confidence Band")
+
+qqun2
+```
+
+After seeing QQ plots with their bands, what distribution do you think the income data follows? 
+
+We now log-adjust the income variable. Let's see what the histogram look like now:
+```{r}
+lnwage_hist <- ggplot(CPSworkers,aes(x=lnwage))+
+  geom_histogram(aes(y=after_stat(density)),bins = 30, col = "white") + stat_function(
+    fun = dnorm,
+    args = list(mean = mean3, sd = sd3),
+    col="red"
+  ) + theme_minimal() + ylab("Density") + xlab("Income")+ ggtitle("Histogram of US log-income in 2020")
+
+lnwage_hist
+```
+
+We know that age is a huge factor contributing to one's income level, so we can run a simple linear regression to explore further about this relationship.
+
+We need to adjust the income data to log normal first and fit the regression $lnwage_i = \beta_0 + \beta_1 Age_i +\epsilon_i$
+```{r}
+educ_hs <- subset (CPSworkers, educ == "High school diploma or equivalent")
+
+# Adjust the data to log-normal
+lnwage <- log(CPSworkers$incwage)
+
+# Fit the regression model
+model <- lm(lnwage ~ age, data = CPSworkers)
+
+#scatter plot with the fitted model
+scatter_line <- ggplot(CPSworkers, aes(x = age, y = lnwage)) +
+  geom_point() +
+  geom_smooth(color = "orange",
+              method = "lm",
+              formula = y ~ x) +
+  labs(title = "Scatterplot of 2020 US individual income and age w/fitted regression",
+       x = "age",
+       y = "income")
+
+print(scatter_line)
+
+#residual plot
+residual <- ggplot(model, aes(x = fitted(model), y = resid(model))) +
+  geom_point()+
+  labs(title = "Residual plot",
+       x = "Predicted value for income",
+       y = "Residuals")
+
+print(residual)
+
+```
+
