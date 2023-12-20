@@ -6,8 +6,9 @@ x = rt(100, 4)
 write.csv(simulated_data3, "mystery_data.csv", row.names = FALSE)
 
 #Generate distribution test data
+set.seed(1)
 distTest_data1 <- tibble(
-  x = rnorm(10000)
+  x = rnorm(16000)
 )
 
 add_data <- tibble(
