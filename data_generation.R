@@ -1,6 +1,7 @@
 # Generate mystery data
+set.seed(48)
 simulated_data3 = tibble(
-x = rt(100, 6)
+x = rt(100, 4)
 )
 write.csv(simulated_data3, "mystery_data.csv", row.names = FALSE)
 
